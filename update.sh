@@ -31,7 +31,7 @@ import json, re
 with open('intros.json', 'r', encoding='utf-8') as f:
     intros = json.load(f)
 
-with open('trending.html', 'r', encoding='utf-8') as f:
+with open('index.html', 'r', encoding='utf-8') as f:
     html = f.read()
 
 json_str = json.dumps(intros, ensure_ascii=False)
@@ -43,7 +43,7 @@ html = re.sub(
     flags=re.DOTALL
 )
 
-with open('trending.html', 'w', encoding='utf-8') as f:
+with open('index.html', 'w', encoding='utf-8') as f:
     f.write(html)
 print('intros 已注入 HTML')
 "
@@ -52,7 +52,7 @@ print('intros 已注入 HTML')
 mkdir -p "$TARGET_DIR"
 
 # 4. 复制到 D 盘
-cp trending.html "$TARGET_DIR/$HTML_NAME"
+cp index.html "$TARGET_DIR/$HTML_NAME"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] 已复制到 D:\\github-trending\\" >> "$LOG_FILE"
 
 # 5. 创建/更新桌面快捷方式（指向 D 盘文件）
