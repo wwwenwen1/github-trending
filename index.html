@@ -77,6 +77,38 @@ header p { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
   font-size: 0.7rem; top: 1px;
 }
 
+/* Hot Words */
+.hot-words-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;
+}
+.hot-words-section h2 { font-size: 1.05rem; color: #f0f6fc; margin-bottom: 14px; }
+.hot-words-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.hot-word {
+  padding: 4px 12px; border-radius: 14px;
+  font-weight: 500; transition: all 0.15s;
+}
+.hot-word:hover { transform: scale(1.05); }
+.hot-word.large { font-size: 1.05rem; color: #f0f6fc; background: #1c2a3a; border: 1px solid #58a6ff55; }
+.hot-word.medium { font-size: 0.88rem; color: #c9d1d9; background: #1a1e2a; border: 1px solid #30363d; }
+.hot-word.small { font-size: 0.75rem; color: #8b949e; background: #161b22; border: 1px solid #21262d; }
+
+/* Rank Change */
+.rank-change { font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+.rank-change.up { color: #3fb950; }
+.rank-change.down { color: #f85149; }
+.rank-change.new { color: var(--link); }
+
+/* Collapse */
+.collapse-btn {
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--muted); padding: 3px 12px; border-radius: 6px;
+  cursor: pointer; font-size: 0.8rem; transition: all 0.15s;
+}
+.collapse-btn:hover { color: var(--link); border-color: var(--link); }
+.table-section.collapsed .table-wrap { display: none; }
+.table-section.collapsed .no-results { display: none !important; }
+
 /* Filters */
 .filters {
   display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
@@ -238,14 +270,23 @@ footer { text-align: center; padding: 20px; color: #484f58; font-size: 0.8rem; }
     <div class="chart-wrap"><canvas id="starChart"></canvas></div>
   </div>
 
+  <!-- Hot Words -->
+  <div class="hot-words-section">
+    <h2>&#x1f525; 热门关键词</h2>
+    <div class="hot-words-wrap" id="hotWords"></div>
+  </div>
+
   <!-- Table -->
-  <div class="table-section">
-    <h2>&#x1f4cb; 全部项目列表（<span id="listCount">0</span> 个）</h2>
+  <div class="table-section" id="tableSection">
+    <h2>
+      &#x1f4cb; 全部项目列表（<span id="listCount">0</span> 个）
+      <button class="collapse-btn" id="collapseBtn" onclick="toggleTable()">收起</button>
+    </h2>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>#</th><th>项目</th><th>分类</th>
+            <th>#</th><th>变动</th><th>项目</th><th>分类</th>
             <th class="num">&#x2b50; Stars</th>
             <th class="num">&#x1f374; Forks</th>
             <th>创建于</th>
@@ -265,7 +306,7 @@ footer { text-align: center; padding: 20px; color: #484f58; font-size: 0.8rem; }
 
 <!-- 内嵌中文简介（由 update.sh 自动注入，本地文件无需 fetch） -->
 <script id="intros-data" type="application/json">
-{"updated": "2026-05-09T15:47:07.700147", "repos": {"nexu-io/open-design": {"intro": "open-design 是一个本地优先、开源的 AI 设计工具，旨在替代 Anthropic 的 Claude Design。它集成了 19 种 AI 技能和 71 套品牌级设计系统，能直接通过自然语言生成网页、桌面/移动端原型、幻灯片、图片、视频及交互式 HyperFrames。用户可在沙盒中预览并导出为 HTML、PDF、PPTX、MP4 等格式。该项目面向设计师、前端开发者及产品经理，解决 AI 生成设计时缺乏本地控制、设计系统不专业、导出格式单一的问题，尤其适合需要快速迭代原型并保持品牌一致性的团队。", "why_hot": "11 天狂揽 3.4 万星，核心原因有三：1）踩中 AI 代码生成（Claude Code、Cursor 等）与设计自动化融合的热点，提供‘一句话生成完整设计+可导出’的极致体验；2）解决设计师和开发者‘用 AI 生成设计但无法直接用于生产’的痛点，本地优先和沙盒预览让结果可控；3）兼容 Claude、Gemini、Copilot 等主流 AI CLI，覆盖大量开发者社区，且开源免费，迅速引发病毒式传播。"}, "EvoLinkAI/awesome-gpt-image-2-API-and-Prompts": {"intro": "这是一个专注于GPT-4o图像生成API接口及提示词工程的资源集合项目。它整理了OpenAI最新的图像生成API（如DALL·E 3、GPT-4o with image generation）的调用方法、参数说明、最佳实践，并提供了大量高质量的提示词模板和示例。主要解决开发者和内容创作者在集成GPT图像生成能力时，面临的API文档分散、提示词效果不稳定、缺乏实战参考等痛点。面向AI应用开发者、提示词工程师、自媒体创作者和AI产品经理，帮助他们快速实现图像生成功能并优化输出质量。", "why_hot": "1) 当前AI图像生成赛道火热，但GPT-4o的API和提示词技巧仍缺乏系统整理，该项目填补了信息空白。2) 它直接解决了开发者反复调试提示词、效果不稳定的具体痛点，提供了可直接复用的模板和参数配置。3) 项目上线后迅速被Reddit、Twitter等社区的技术博主和AI创作者转发，形成了病毒式传播，21天内获得1.3万+星标，反映了社区对高质量实战资源的迫切需求。"}, "alchaincyf/huashu-design": {"intro": "Huashu Design 是一个面向 AI 编程助手（如 Claude Code）的 HTML 原生设计 Skill 系统。它通过一套标准化的 HTML/CSS 模板库和 20 条设计哲学，让 AI 能够直接生成高保真原型、幻灯片、交互动画等视觉内容，并支持 5 维评审机制和 MP4 导出。该项目解决了传统 AI 生成 UI 时样式粗糙、缺乏设计规范、无法直接用于演示或评审的痛点。目标用户是使用 Claude Code 等 AI 编程工具的开发者、设计师和产品经理，尤其适合需要快速产出高质量视觉原型或演示材料的团队。", "why_hot": "1) 契合 AI 编程工具（如 Claude Code、Cursor）爆发的技术趋势，用户急需让 AI 输出更专业、可直接使用的设计成果，而非粗糙的代码片段。2) 解决了 AI 生成 UI 时‘能看不能用’的痛点：通过预设设计哲学和评审维度，让输出达到高保真原型标准，省去手动调样式的时间。3) 社区推动：在 Twitter/X 和 GitHub 上被多位 AI 编程 KOL 转发推荐，20 天内获得 1.2 万+ Star，形成病毒式传播。"}}}
+{"updated": "2026-05-09T16:49:44.121379", "repos": {"nexu-io/open-design": {"intro": "open-design 是一个开源的本地优先设计工具，作为 Anthropic Claude Design 的替代品，专为开发者和设计师打造。它集成了 19 种技能和 71 套品牌级设计系统，能直接生成网页、桌面/移动端原型、幻灯片、图片、视频及 HyperFrames。支持在 Claude Code、Cursor、Gemini 等 10 多种 AI CLI 中运行，提供沙盒预览和 HTML/PDF/PPTX/MP4 导出。核心解决的是团队在 AI 辅助下快速原型设计、跨格式输出和私有化部署的痛点，尤其适合需要高频迭代、对设计系统一致性要求高的技术团队。", "why_hot": "1) 紧跟 AI 编程工具爆发趋势（如 Claude Code、Cursor），将设计能力直接嵌入开发者工作流，省去传统设计-开发交接环节。2) 精准解决设计系统碎片化痛点：71 套品牌级模板让团队无需从零搭建，秒级生成高保真原型。3) 社区驱动效应：11 天狂揽 3.4 万星，GitHub 开发者群体对‘开源替代闭源设计工具’的强烈需求被激活，形成病毒式传播。"}, "EvoLinkAI/awesome-gpt-image-2-API-and-Prompts": {"intro": "EvoLinkAI/awesome-gpt-image-2-API-and-Prompts 是一个专注于 GPT 图像生成与处理 API 的资源集合项目，主要收录了各类将 GPT 视觉能力（如 GPT-4V、DALL·E 等）封装为可调用 API 的工具、库、反向代理方案以及精心设计的提示词（Prompts）。它解决了开发者在使用 GPT 图像功能时面临的接口不统一、文档分散、提示词效果不稳定等具体问题，尤其适合 AI 应用开发者、自媒体内容创作者和提示词工程师快速集成图像生成、识别与编辑能力，无需从头研究底层实现。", "why_hot": "1) 当前 GPT-4V 等多模态模型成为行业热点，但官方 API 对图像处理的支持尚不完善，该项目集中了社区最佳实践和反向代理方案，极大降低了开发门槛；2) 它直接解决了开发者‘如何高效调用 GPT 图像能力’和‘如何写出高质量图像提示词’两大痛点，提供了可复用的现成代码和 Prompt 模板，节省了大量试错成本；3) 目标用户（AI 应用开发者、自媒体创作者）活跃在 GitHub 和 X/Twitter 等平台，项目在 21 天内获得 1.3 万星，反映了社区对多模态 API 封装资源的强烈需求。"}, "alchaincyf/huashu-design": {"intro": "Huashu Design 是一个专为 Claude Code 等 AI 编程助手设计的 HTML 原生设计技能包。它解决了在对话式编程中无法高效生成高保真原型、演示幻灯片或动画的痛点，提供了 20 条设计哲学和 5 维评审标准，并支持 MP4 导出。面向需要快速原型设计、演示文档制作或视觉动画的开发者、设计师和 AI 编程用户，尤其适合在无 GUI 的终端环境中通过自然语言直接生成可交互的 HTML 设计作品。", "why_hot": "1) 当前 AI 编程工具（如 Claude Code）爆火，但缺乏原生设计能力，Huashu Design 填补了这一空白，让 AI 直接生成 HTML 高保真原型和动画，极大提升了生产效率。2) 它解决了开发者用自然语言描述设计需求但无法获得视觉反馈的痛点，且 20 天内获得 1.2 万星，说明被开发者社区快速认可并推动传播。"}}}
 </script>
 
 <script>
@@ -419,9 +460,16 @@ function renderAll() {
   renderFilters();
   renderTop3(filtered.slice(0, 3));
   renderChart(filtered.slice(0, 10));
+  renderHotWords(extractHotWords(allRepos.slice(0, 20)));
   renderTable(filtered);
   document.getElementById('listCount').textContent = filtered.length;
   document.getElementById('noResults').style.display = filtered.length ? 'none' : 'block';
+
+  // 恢复折叠状态
+  const collapsed = localStorage.getItem('gh_table_collapsed') === '1';
+  const section = document.getElementById('tableSection');
+  const btn = document.getElementById('collapseBtn');
+  if (collapsed) { section.classList.add('collapsed'); btn.textContent = '展开'; }
 
   // 更新时间显示
   const badge = document.getElementById('timeBadge');
@@ -477,6 +525,77 @@ function formatWhyHot(text) {
   const parts = t.split(/(?:\d)[\)\.]\s*/).filter(Boolean);
   if (parts.length <= 1) return `<p>${t}</p>`;
   return `<ul>${parts.map(p => `<li>${p.trim()}</li>`).join('')}</ul>`;
+}
+
+// ── 排名变化 ──
+function computeRankChanges(repos) {
+  const prev = JSON.parse(localStorage.getItem('gh_prev_rankings') || '{}');
+  const now = {};
+  repos.forEach(r => { now[r.full_name] = r.rank; });
+  // 保存当前排名
+  localStorage.setItem('gh_prev_rankings', JSON.stringify(now));
+  // 计算变化
+  return repos.map(r => {
+    const old = prev[r.full_name];
+    if (old === undefined) return { full_name: r.full_name, change: 'NEW', cls: 'new' };
+    const diff = old - r.rank;
+    if (diff > 0) return { full_name: r.full_name, change: `↑${diff}`, cls: 'up' };
+    if (diff < 0) return { full_name: r.full_name, change: `↓${Math.abs(diff)}`, cls: 'down' };
+    return { full_name: r.full_name, change: '-', cls: '' };
+  });
+}
+
+// ── 热词提取 ──
+const HOT_WORDS_DICT = {
+  'ai': 'AI', 'llm': 'LLM', 'gpt': 'GPT', 'claude': 'Claude', 'agent': 'Agent',
+  'openai': 'OpenAI', 'deepseek': 'DeepSeek', 'copilot': 'Copilot', 'cursor': 'Cursor',
+  'model': '模型', 'api': 'API', 'open-source': '开源', 'local-first': '本地优先',
+  'design': '设计', 'prototype': '原型', 'react': 'React', 'vue': 'Vue',
+  'typescript': 'TypeScript', 'javascript': 'JavaScript', 'rust': 'Rust',
+  'python': 'Python', 'cli': 'CLI', 'tool': '工具', 'sdk': 'SDK',
+  'plugin': '插件', 'web': 'Web', 'mobile': '移动端', 'desktop': '桌面端',
+  'docker': 'Docker', 'kubernetes': 'K8s', 'server': '服务端',
+  'database': '数据库', 'framework': '框架', 'library': '类库',
+  'template': '模板', 'generator': '生成器', 'code': '代码',
+  'image': '图像', 'video': '视频', 'text-to': '文本生成',
+  'rag': 'RAG', 'workflow': '工作流', 'automation': '自动化',
+  'html': 'HTML', 'css': 'CSS', 'slides': '幻灯片', 'animation': '动画',
+  'export': '导出', 'preview': '预览', 'sandbox': '沙盒', 'native': '原生',
+};
+
+function extractHotWords(repos) {
+  const counts = {};
+  repos.forEach(r => {
+    const text = ((r.description || '') + ' ' + (r.full_name || '') + ' ' + (r.language || '')).toLowerCase();
+    Object.entries(HOT_WORDS_DICT).forEach(([key, label]) => {
+      if (text.includes(key)) counts[label] = (counts[label] || 0) + 1;
+    });
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 18)
+    .map(([word, count]) => ({ word, count }));
+}
+
+function renderHotWords(words) {
+  const max = words.length ? words[0].count : 1;
+  const el = document.getElementById('hotWords');
+  el.innerHTML = words.map(w => {
+    let tier;
+    if (w.count >= max * 0.7) tier = 'large';
+    else if (w.count >= max * 0.4) tier = 'medium';
+    else tier = 'small';
+    return `<span class="hot-word ${tier}">${w.word}<span style="font-size:0.65rem;margin-left:3px;opacity:0.5">${w.count}</span></span>`;
+  }).join('');
+}
+
+// ── 表格折叠 ──
+function toggleTable() {
+  const section = document.getElementById('tableSection');
+  const btn = document.getElementById('collapseBtn');
+  const collapsed = section.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '展开' : '收起';
+  localStorage.setItem('gh_table_collapsed', collapsed ? '1' : '0');
 }
 
 function renderTop3(items) {
@@ -568,14 +687,25 @@ function renderChart(items) {
 }
 
 function renderTable(items) {
+  const changes = computeRankChanges(items);
+  const changeMap = {};
+  changes.forEach(c => { changeMap[c.full_name] = c; });
+
   const el = document.getElementById('tableBody');
   el.innerHTML = items.map(r => {
     const catNames = r.categories.map(cid => {
       const c = CATEGORIES.find(x => x.id === cid);
       return c ? c.label : '';
     }).filter(Boolean).join(' ');
+    const ch = changeMap[r.full_name] || { change: '-', cls: '' };
+    const chHtml = ch.change === 'NEW'
+      ? `<span class="rank-change new">NEW</span>`
+      : ch.change === '-'
+        ? `<span class="rank-change" style="color:var(--muted)">-</span>`
+        : `<span class="rank-change ${ch.cls}">${ch.change}</span>`;
     return `<tr>
       <td style="color:var(--muted)">#${r.rank}</td>
+      <td>${chHtml}</td>
       <td>
         <a href="${r.html_url}" target="_blank">${r.full_name}</a>
         <div style="font-size:0.8rem;color:var(--muted);margin-top:2px">${r.description || '暂无简介'}</div>
