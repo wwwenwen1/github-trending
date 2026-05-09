@@ -424,8 +424,7 @@ async function fetchTrending(force = false) {
 
   const resp = await fetch(url, {
     headers: { 'Accept': 'application/vnd.github.v3+json' },
-    signal: AbortSignal.timeout(15000)
-  });
+      });
   if (!resp.ok) {
     if (resp.status === 403) throw new Error('API 限流（60次/小时），请稍后再试');
     throw new Error(`GitHub API 返回错误 (${resp.status})`);
