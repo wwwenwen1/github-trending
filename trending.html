@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 热门项目排行榜</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --muted: #8b949e;
+  --link: #58a6ff;
+  --gold: #e3b341;
+  --green: #3fb950;
+  --orange: #f78166;
+  --purple: #a371f7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg); color: var(--text);
+  line-height: 1.6; min-height: 100vh;
+}
+.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+/* Header */
+header {
+  text-align: center; padding: 40px 0 20px;
+  border-bottom: 1px solid var(--border); margin-bottom: 24px;
+}
+header h1 { font-size: 2rem; color: #f0f6fc; }
+header h1 span { color: var(--gold); }
+header p { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+.time-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-top: 10px; flex-wrap: wrap;
+}
+.time-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 16px;
+  font-size: 0.82rem; font-weight: 500;
+}
+.time-badge.fresh { background: #1a2e1a; color: var(--green); border: 1px solid #23863644; }
+.time-badge.cached { background: #2a1e0a; color: var(--gold); border: 1px solid #d2992244; }
+.refresh-btn {
+  padding: 5px 16px; border-radius: 16px;
+  border: 1px solid var(--border); background: var(--card);
+  color: var(--link); cursor: pointer; font-size: 0.82rem;
+  transition: all 0.2s;
+}
+.refresh-btn:hover { background: #1c2a3a; border-color: var(--link); }
+.intro-cn {
+  color: var(--text); font-size: 0.9rem; line-height: 1.7;
+  padding-bottom: 12px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.why-hot {
+  background: #1a1608; border: 1px solid #3a3008;
+  border-radius: 10px; padding: 14px 16px;
+  font-size: 0.85rem; line-height: 1.7;
+}
+.why-hot .label {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--gold); font-weight: 700; font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+.why-hot ul { margin: 0; padding-left: 0; list-style: none; }
+.why-hot ul li {
+  position: relative; padding-left: 22px; margin-bottom: 6px;
+  color: #e6d9a8;
+}
+.why-hot ul li::before {
+  content: '▸'; position: absolute; left: 4px; color: var(--gold);
+  font-size: 0.7rem; top: 1px;
+}
+
+/* Filters */
+.filters {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  margin-bottom: 28px;
+}
+.filter-btn {
+  padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); cursor: pointer;
+  font-size: 0.85rem; transition: all 0.2s;
+}
+.filter-btn:hover { border-color: var(--link); color: var(--link); }
+.filter-btn.active { background: var(--link); border-color: var(--link); color: #fff; }
+.filter-btn .count { color: var(--muted); font-size: 0.75rem; margin-left: 4px; }
+
+/* Loading */
+.loading {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.loading .spinner {
+  width: 40px; height: 40px; border: 3px solid var(--border);
+  border-top-color: var(--link); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-box {
+  background: #2d1111; border: 1px solid #f8514966; border-radius: 8px;
+  padding: 20px; text-align: center; color: #f85149; margin: 20px 0;
+}
+
+/* Top 3 Cards */
+.top3 {
+  display: flex; flex-direction: column;
+  gap: 16px; margin-bottom: 32px;
+}
+.top-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; position: relative;
+  transition: border-color 0.2s;
+}
+.top-card:hover { border-color: var(--link); }
+.top-card .rank {
+  position: absolute; top: 12px; right: 16px;
+  font-weight: 800; color: var(--border);
+}
+.top-card.rank1 .rank {
+  font-size: 3.5rem;
+  background: linear-gradient(135deg, #e3b341, #f0c75e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px #e3b34144);
+}
+.top-card.rank2 .rank {
+  font-size: 2.8rem;
+  color: #a0aab4;
+}
+.top-card.rank3 .rank {
+  font-size: 2.2rem;
+  color: #d9785a;
+}
+.top-card.rank1 { border-color: var(--gold); }
+.top-card.rank2 { border-color: var(--muted); }
+.top-card.rank3 { border-color: var(--orange); }
+.top-card .repo-name {
+  font-size: 1.25rem; font-weight: 600; margin-bottom: 4px;
+}
+.top-card .repo-name a { color: var(--link); text-decoration: none; }
+.top-card .repo-name a:hover { text-decoration: underline; }
+.top-card .stats {
+  display: flex; gap: 16px; align-items: center; margin: 8px 0;
+  font-size: 0.9rem; color: var(--muted);
+}
+.top-card .stars { color: var(--gold); font-weight: 700; font-size: 1.1rem; }
+.top-card .desc { color: var(--text); font-size: 0.9rem; margin: 8px 0; line-height: 1.5; }
+.top-card .tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.top-card .days-ago { font-size: 0.8rem; color: var(--muted); }
+
+/* Tags */
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 0.75rem; font-weight: 500;
+}
+.tag-lang { background: #1c2a3a; color: var(--link); }
+.tag-cat { background: #1a2e1a; color: var(--green); }
+.tag-hot { background: #3a2a0a; color: var(--gold); }
+
+/* Chart section */
+.chart-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; margin-bottom: 32px;
+}
+.chart-section h2 { font-size: 1.1rem; color: #f0f6fc; margin-bottom: 16px; }
+.chart-wrap { position: relative; height: 300px; }
+
+/* Table */
+.table-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; margin-bottom: 40px;
+}
+.table-section h2 { font-size: 1.1rem; color: #f0f6fc; padding: 20px 24px 0; }
+.table-wrap { overflow-x: auto; padding: 12px 24px 24px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+tr:hover td { background: #1c2129; }
+td a { color: var(--link); text-decoration: none; }
+td a:hover { text-decoration: underline; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.desc-cell { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lang-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 4px; vertical-align: middle;
+}
+.no-results { text-align: center; padding: 40px; color: var(--muted); }
+footer { text-align: center; padding: 20px; color: #484f58; font-size: 0.8rem; }
+
+@media (max-width: 750px) {
+  .top3 { grid-template-columns: 1fr; }
+  header h1 { font-size: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<header>
+  <h1><span>&#x1f525;</span> GitHub 热门项目排行榜</h1>
+  <p>发现近期最受关注的优秀开源项目</p>
+  <div class="time-row">
+    <span class="time-badge" id="timeBadge">正在加载...</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="forceRefresh()" disabled>&#x21bb; 立即刷新</button>
+  </div>
+</header>
+
+<!-- Filters -->
+<div class="filters" id="filters"></div>
+
+<!-- Loading -->
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <div>正在获取 GitHub 热门数据...</div>
+</div>
+
+<!-- Error -->
+<div class="error-box" id="errorBox" style="display:none">
+  <p id="errorMsg"></p>
+</div>
+
+<!-- Main Content -->
+<div id="content" style="display:none">
+  <!-- Top 3 -->
+  <div class="top3" id="top3"></div>
+
+  <!-- Chart -->
+  <div class="chart-section">
+    <h2>&#x1f4ca; Star 数量对比（前 10 名）</h2>
+    <div class="chart-wrap"><canvas id="starChart"></canvas></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-section">
+    <h2>&#x1f4cb; 全部项目列表（<span id="listCount">0</span> 个）</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>项目</th><th>分类</th>
+            <th class="num">&#x2b50; Stars</th>
+            <th class="num">&#x1f374; Forks</th>
+            <th>创建于</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="no-results" id="noResults" style="display:none">
+        该分类下暂无项目 &mdash; 试试其他标签
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>GitHub Trending Explorer &middot; 数据来自 GitHub Search API &middot; 无需登录</footer>
+</div>
+
+<!-- 内嵌中文简介（由 update.sh 自动注入，本地文件无需 fetch） -->
+<script id="intros-data" type="application/json">
+{"updated": "2026-05-09T15:47:07.700147", "repos": {"nexu-io/open-design": {"intro": "open-design 是一个本地优先、开源的 AI 设计工具，旨在替代 Anthropic 的 Claude Design。它集成了 19 种 AI 技能和 71 套品牌级设计系统，能直接通过自然语言生成网页、桌面/移动端原型、幻灯片、图片、视频及交互式 HyperFrames。用户可在沙盒中预览并导出为 HTML、PDF、PPTX、MP4 等格式。该项目面向设计师、前端开发者及产品经理，解决 AI 生成设计时缺乏本地控制、设计系统不专业、导出格式单一的问题，尤其适合需要快速迭代原型并保持品牌一致性的团队。", "why_hot": "11 天狂揽 3.4 万星，核心原因有三：1）踩中 AI 代码生成（Claude Code、Cursor 等）与设计自动化融合的热点，提供‘一句话生成完整设计+可导出’的极致体验；2）解决设计师和开发者‘用 AI 生成设计但无法直接用于生产’的痛点，本地优先和沙盒预览让结果可控；3）兼容 Claude、Gemini、Copilot 等主流 AI CLI，覆盖大量开发者社区，且开源免费，迅速引发病毒式传播。"}, "EvoLinkAI/awesome-gpt-image-2-API-and-Prompts": {"intro": "这是一个专注于GPT-4o图像生成API接口及提示词工程的资源集合项目。它整理了OpenAI最新的图像生成API（如DALL·E 3、GPT-4o with image generation）的调用方法、参数说明、最佳实践，并提供了大量高质量的提示词模板和示例。主要解决开发者和内容创作者在集成GPT图像生成能力时，面临的API文档分散、提示词效果不稳定、缺乏实战参考等痛点。面向AI应用开发者、提示词工程师、自媒体创作者和AI产品经理，帮助他们快速实现图像生成功能并优化输出质量。", "why_hot": "1) 当前AI图像生成赛道火热，但GPT-4o的API和提示词技巧仍缺乏系统整理，该项目填补了信息空白。2) 它直接解决了开发者反复调试提示词、效果不稳定的具体痛点，提供了可直接复用的模板和参数配置。3) 项目上线后迅速被Reddit、Twitter等社区的技术博主和AI创作者转发，形成了病毒式传播，21天内获得1.3万+星标，反映了社区对高质量实战资源的迫切需求。"}, "alchaincyf/huashu-design": {"intro": "Huashu Design 是一个面向 AI 编程助手（如 Claude Code）的 HTML 原生设计 Skill 系统。它通过一套标准化的 HTML/CSS 模板库和 20 条设计哲学，让 AI 能够直接生成高保真原型、幻灯片、交互动画等视觉内容，并支持 5 维评审机制和 MP4 导出。该项目解决了传统 AI 生成 UI 时样式粗糙、缺乏设计规范、无法直接用于演示或评审的痛点。目标用户是使用 Claude Code 等 AI 编程工具的开发者、设计师和产品经理，尤其适合需要快速产出高质量视觉原型或演示材料的团队。", "why_hot": "1) 契合 AI 编程工具（如 Claude Code、Cursor）爆发的技术趋势，用户急需让 AI 输出更专业、可直接使用的设计成果，而非粗糙的代码片段。2) 解决了 AI 生成 UI 时‘能看不能用’的痛点：通过预设设计哲学和评审维度，让输出达到高保真原型标准，省去手动调样式的时间。3) 社区推动：在 Twitter/X 和 GitHub 上被多位 AI 编程 KOL 转发推荐，20 天内获得 1.2 万+ Star，形成病毒式传播。"}}}
+</script>
+
+<script>
+// ── 语言色映射 ──
+const LANG_COLORS = {
+  'JavaScript': '#f1e05a', 'TypeScript': '#3178c6', 'Python': '#3572A5',
+  'Go': '#00ADD8', 'Rust': '#dea584', 'Java': '#b07219', 'C': '#555555',
+  'C++': '#f34b7d', 'C#': '#178600', 'Ruby': '#701516', 'Swift': '#F05138',
+  'Kotlin': '#A97BFF', 'Zig': '#ec915c', 'Shell': '#89e051', 'HTML': '#e34c26',
+  'CSS': '#563d7c', 'SCSS': '#c6538c', 'Vue': '#41b883', 'Svelte': '#ff3e00',
+  'Dart': '#00B4AB', 'Lua': '#000080', 'PHP': '#4F5D95', 'Scala': '#c22d40',
+  'Elixir': '#6e4a7e', 'Haskell': '#5e5086', 'Clojure': '#db5855',
+  'Jupyter Notebook': '#DA5B0B', 'MDX': '#fcb32c', 'Dockerfile': '#384d54',
+  'Makefile': '#427819', 'Nix': '#7e7eff', 'CMake': '#DA3434', 'R': '#198CE7',
+};
+
+// ── 分类规则 ──
+const CATEGORIES = [
+  { id: 'all', label: '全部', icon: '&#x1f30d;' },
+  { id: 'ai', label: '&#x1f916; AI/LLM', match(r) {
+    const kw = ['ai','llm','gpt','claude','agent','model','deepseek','openai','rag','copilot','chat','prompt','transformer','llama','mistral','gemini','diffusion','stable-diffusion','text-to'];
+    const t = (r.description||'').toLowerCase() + ' ' + (r.full_name||'').toLowerCase();
+    return kw.some(k => t.includes(k));
+  }},
+  { id: 'frontend', label: '&#x1f3a8; 前端', match(r) {
+    const kw = ['ui','react','vue','component','css','tailwind','web','frontend','svelte','next.js','nuxt','astro','htmx'];
+    const t = (r.description||'').toLowerCase() + ' ' + (r.language||'').toLowerCase();
+    return kw.some(k => t.includes(k));
+  }},
+  { id: 'backend', label: '&#x2699;&#xfe0f; 后端', match(r) {
+    const kw = ['api','server','database','postgres','sql','graphql','grpc','backend','microservice','orm','kubernetes','docker','redis','kafka','message queue'];
+    const t = (r.description||'').toLowerCase();
+    return kw.some(k => t.includes(k));
+  }},
+  { id: 'devtools', label: '&#x1f6e0;&#xfe0f; 工具', match(r) {
+    const kw = ['cli','tool','sdk','framework','library','sdk','plugin','devtools','debug','compiler','editor','ide','terminal','shell','git','package','build','linter','formatter','bundler','vite','webpack'];
+    const t = (r.description||'').toLowerCase() + ' ' + (r.full_name||'').toLowerCase();
+    return kw.some(k => t.includes(k));
+  }},
+  { id: 'rust', label: '&#x1f980; Rust', match(r) {
+    return (r.language === 'Rust');
+  }},
+  { id: 'mobile', label: '&#x1f4f1; 移动端', match(r) {
+    const kw = ['ios','android','mobile','swift','kotlin','flutter','react-native','expo'];
+    const t = (r.description||'').toLowerCase();
+    return kw.some(k => t.includes(k));
+  }},
+];
+
+// ── 中文简介数据 ──
+let introsData = {};
+
+function loadIntros() {
+  try {
+    const el = document.getElementById('intros-data');
+    if (el && el.textContent.trim()) {
+      introsData = JSON.parse(el.textContent);
+      const updated = new Date(introsData.updated).getTime();
+      if (Date.now() - updated > 7200000) introsData = {};
+    }
+  } catch(e) { introsData = {}; }
+}
+
+// ── 格式化 ──
+function formatTime(ts) {
+  return new Date(ts).toLocaleString('zh-CN');
+}
+
+function daysAgo(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 86400000);
+  if (diff === 0) return '今天';
+  if (diff === 1) return '昨天';
+  if (diff < 30) return `${diff} 天前`;
+  const m = Math.floor(diff / 30);
+  return `${m} 个月前`;
+}
+
+function formatNum(n) {
+  if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+  return String(n);
+}
+
+function langColor(lang) {
+  return LANG_COLORS[lang] || '#8b949e';
+}
+
+// ── 获取分类 ──
+function getCategories(repo) {
+  return CATEGORIES.filter(c => c.match && c.match(repo)).map(c => c.id);
+}
+
+// ── 获取数据 ──
+async function fetchTrending(force = false) {
+  const cacheKey = 'gh_trending_v2';
+  const cacheTimeKey = cacheKey + '_time';
+
+  // 非强制刷新时检查缓存
+  if (!force) {
+    const cacheTime = localStorage.getItem(cacheTimeKey);
+    if (cacheTime && (Date.now() - Number(cacheTime)) < 3600000) {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        return { repos: JSON.parse(cached), fromCache: true, fetchTime: Number(cacheTime) };
+      }
+    }
+  }
+
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  const since = date.toISOString().split('T')[0];
+  const query = `created:>${since}`;
+  const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=20`;
+
+  const resp = await fetch(url, {
+    headers: { 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (!resp.ok) {
+    if (resp.status === 403) throw new Error('API 限流（60次/小时），请稍后再试');
+    throw new Error(`GitHub API 返回错误 (${resp.status})`);
+  }
+  const data = await resp.json();
+
+  const enriched = (data.items || []).map((repo, i) => ({
+    ...repo,
+    rank: i + 1,
+    categories: getCategories(repo),
+  }));
+
+  const fetchTime = Date.now();
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(enriched));
+    localStorage.setItem(cacheTimeKey, String(fetchTime));
+  } catch(e) { /* quota exceeded */ }
+
+  return { repos: enriched, fromCache: false, fetchTime };
+}
+
+// ── 渲染 ──
+let allRepos = [];
+let activeFilter = 'all';
+let dataFromCache = false;
+let dataFetchTime = Date.now();
+
+function renderAll() {
+  const filtered = activeFilter === 'all'
+    ? allRepos
+    : allRepos.filter(r => r.categories.includes(activeFilter));
+
+  renderFilters();
+  renderTop3(filtered.slice(0, 3));
+  renderChart(filtered.slice(0, 10));
+  renderTable(filtered);
+  document.getElementById('listCount').textContent = filtered.length;
+  document.getElementById('noResults').style.display = filtered.length ? 'none' : 'block';
+
+  // 更新时间显示
+  const badge = document.getElementById('timeBadge');
+  const btn = document.getElementById('refreshBtn');
+  if (dataFromCache) {
+    badge.className = 'time-badge cached';
+    badge.innerHTML = `&#x1f4be; 缓存于 ${formatTime(dataFetchTime)}`;
+    btn.disabled = false;
+  } else {
+    badge.className = 'time-badge fresh';
+    badge.innerHTML = `&#x1f504; 数据获取于 ${formatTime(dataFetchTime)}`;
+    btn.disabled = false;
+  }
+}
+
+async function forceRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = '刷新中...';
+  try {
+    const result = await fetchTrending(true);
+    allRepos = result.repos;
+    dataFromCache = false;
+    dataFetchTime = result.fetchTime;
+    renderAll();
+  } catch(e) {
+    alert('刷新失败：' + e.message);
+  }
+  btn.textContent = '↻ 立即刷新';
+  btn.disabled = false;
+}
+
+function renderFilters() {
+  const el = document.getElementById('filters');
+  const counts = {};
+  CATEGORIES.forEach(c => {
+    counts[c.id] = c.id === 'all'
+      ? allRepos.length
+      : allRepos.filter(r => r.categories.includes(c.id)).length;
+  });
+  el.innerHTML = CATEGORIES.map(c => {
+    const active = c.id === activeFilter ? ' active' : '';
+    return `<button class="filter-btn${active}" data-cat="${c.id}" onclick="setFilter('${c.id}')">
+      ${c.label}<span class="count">${counts[c.id]}</span></button>`;
+  }).join('');
+}
+
+// ── 格式化"为什么火"为列表 ──
+function formatWhyHot(text) {
+  // 去掉可能重复的"爆火原因："前缀
+  let t = text.replace(/^爆火原因[：:]\s*/g, '');
+  // 拆分 1) 2) 3) 或 1. 2. 3. 格式
+  const parts = t.split(/(?:\d)[\)\.]\s*/).filter(Boolean);
+  if (parts.length <= 1) return `<p>${t}</p>`;
+  return `<ul>${parts.map(p => `<li>${p.trim()}</li>`).join('')}</ul>`;
+}
+
+function renderTop3(items) {
+  const el = document.getElementById('top3');
+  el.innerHTML = items.map((r, i) => {
+    const rankClass = i === 0 ? 'rank1' : i === 1 ? 'rank2' : 'rank3';
+    const info = (introsData.repos || {})[r.full_name];
+    return `<div class="top-card ${rankClass}">
+      <div class="rank">#${r.rank}</div>
+      <div class="repo-name">
+        <a href="${r.html_url}" target="_blank">${r.full_name}</a>
+      </div>
+      <div class="stats">
+        <span class="stars">&#x2b50; ${r.stargazers_count.toLocaleString()}</span>
+        <span>&#x1f374; ${formatNum(r.forks_count)}</span>
+        <span>&#x1f4c5; ${daysAgo(r.created_at)}</span>
+      </div>
+      ${info
+        ? `<div class="intro-cn">&#x1f4d6; ${info.intro}</div>
+           <div class="why-hot">
+             <div class="label">&#x1f525; 为什么这么火</div>
+             ${formatWhyHot(info.why_hot)}
+           </div>`
+        : `<div class="desc">${r.description || '（暂无介绍）'}</div>`
+      }
+      <div class="tags-row">
+        ${r.language ? `<span class="tag tag-lang">
+          <span class="lang-dot" style="background:${langColor(r.language)}"></span>${r.language}
+        </span>` : ''}
+        ${r.categories.slice(0, 2).map(cid => {
+          const c = CATEGORIES.find(x => x.id === cid);
+          return c ? `<span class="tag tag-cat">${c.label}</span>` : '';
+        }).join('')}
+        ${r.stargazers_count > 50000 ? '<span class="tag tag-hot">&#x1f525; 爆火</span>' : ''}
+        ${info ? '<span class="tag tag-hot">&#x1f4dd; AI 解读</span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderChart(items) {
+  const canvas = document.getElementById('starChart');
+  const names = items.map(r => r.full_name.split('/')[1]);
+  const stars = items.map(r => r.stargazers_count);
+  const colors = ['#e3b341','#58a6ff','#3fb950','#f78166','#a371f7',
+                   '#8b949e','#79c0ff','#56d364','#e3b34199','#f0883e'];
+
+  // 销毁旧图
+  const existing = Chart.getChart(canvas);
+  if (existing) existing.destroy();
+
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [{
+        label: 'Stars',
+        data: stars,
+        backgroundColor: colors.slice(0, items.length),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.x.toLocaleString()} stars`
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { color: '#8b949e', callback: v => formatNum(v) },
+          grid: { color: '#21262d' }
+        },
+        y: {
+          ticks: { color: '#8b949e', font: { size: 12 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function renderTable(items) {
+  const el = document.getElementById('tableBody');
+  el.innerHTML = items.map(r => {
+    const catNames = r.categories.map(cid => {
+      const c = CATEGORIES.find(x => x.id === cid);
+      return c ? c.label : '';
+    }).filter(Boolean).join(' ');
+    return `<tr>
+      <td style="color:var(--muted)">#${r.rank}</td>
+      <td>
+        <a href="${r.html_url}" target="_blank">${r.full_name}</a>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:2px">${r.description || '暂无简介'}</div>
+      </td>
+      <td style="font-size:0.8rem">${catNames || '<span style="color:var(--muted)">通用</span>'}</td>
+      <td class="num" style="color:var(--gold)">${r.stargazers_count.toLocaleString()}</td>
+      <td class="num">${formatNum(r.forks_count)}</td>
+      <td style="white-space:nowrap;color:var(--muted)">${daysAgo(r.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setFilter(id) {
+  activeFilter = id;
+  renderAll();
+}
+
+// ── 入口 ──
+async function main() {
+  try {
+    // 并行加载数据
+    const result = await fetchTrending();
+    allRepos = result.repos;
+    dataFromCache = result.fromCache;
+    dataFetchTime = result.fetchTime;
+    loadIntros();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    renderAll();
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'block';
+    document.getElementById('errorMsg').textContent = '加载失败：' + e.message;
+    // 如果有缓存就用缓存的
+    const cached = localStorage.getItem('gh_trending_v2');
+    if (cached) {
+      allRepos = JSON.parse(cached);
+      dataFromCache = true;
+      dataFetchTime = Number(localStorage.getItem('gh_trending_v2_time'));
+      loadIntros();
+      document.getElementById('errorBox').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      renderAll();
+    }
+  }
+}
+
+main();
+</script>
+</body>
+</html>
